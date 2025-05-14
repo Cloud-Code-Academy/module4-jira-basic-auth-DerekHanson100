@@ -2,9 +2,13 @@
  * Wrapper classes for Jira entities (Project and Issue)
  */
 public class JiraWrapper {
-	private static final String LEAD_ACCOUNT_ID = '1337:0123456789-bfa0-40f4-bd28-25ae65c3e5b1';
-	private static final String PROJECT_TEMPLATE_KEY = 'com.pyxis.greenhopper.jira:basic-software-development-template';
+	// private static final String LEAD_ACCOUNT_ID = '603f45e530320b00694da932';
+	// private static final String PROJECT_TEMPLATE_KEY = 'com.pyxis.greenhopper.jira:basic-software-development-template';
+	// private static final String PROJECT_TYPE_KEY = 'software';
 
+	// Moved to Custom Metadata
+	private static final Jira_Integration_Config__mdt CFG =
+    	Jira_Integration_Config__mdt.getInstance('Default');
 	/**
 	 * Wrapper for Jira Project
 	 */
@@ -13,6 +17,7 @@ public class JiraWrapper {
 		public String key;
 		public String description;
 		public String leadAccountId;
+		public String projectTypeKey;
 		public String projectTemplateKey;
 
 		/**
@@ -22,8 +27,9 @@ public class JiraWrapper {
 			this.name = name;
 			this.key = key;
 			this.description = description;
-			this.leadAccountId = LEAD_ACCOUNT_ID;
-			this.projectTemplateKey = PROJECT_TEMPLATE_KEY;
+			this.leadAccountId = CFG.Lead_Account_Id__c;
+			this.projectTypeKey = CFG.Project_Type_Key__c;
+			this.projectTemplateKey = CFG.Project_Template_Key__c;
 		}
 	}
 
@@ -66,7 +72,17 @@ public class JiraWrapper {
 		 */
 		public Map<String, Object> generateIssuePayloadMap() {
 			// Your implementation goes here
-			return null;
+			// Build the nested “fields” map
+			
+			Map<String, Object> fields = new Map<String, Object>{
+				'project'   => new Map<String, Object>{ 'key'  => projectKey },
+				'issuetype' => new Map<String, Object>{ 'name' => issueType },
+				'summary'   => summary,
+				'description' => formatDescription(description)
+				};
+			  
+			  // Top-level payload
+			  return new Map<String, Object>{ 'fields' => fields };
 		}
 
 		/**
@@ -97,8 +113,24 @@ public class JiraWrapper {
 		 *   }
 		 */
 		private Map<String, Object> formatDescription(String descText) {
-			// Your implementation goes here
-			return null;
+			// Your implementation goes here// Text node
+            Map<String, Object> textNode = new Map<String, Object>{
+                'type' => 'text',
+                'text' => descText
+            };
+
+            // Paragraph node wrapping the text
+            Map<String, Object> paragraphNode = new Map<String, Object>{
+                'type'    => 'paragraph',
+                'content' => new List<Object>{ textNode }
+            };
+
+            // The doc root
+            return new Map<String, Object>{
+                'type'    => 'doc',
+                'version' => 1,
+                'content' => new List<Object>{ paragraphNode }
+            };
 		}
 	}
 }

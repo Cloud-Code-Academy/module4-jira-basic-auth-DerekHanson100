@@ -26,7 +26,8 @@ public class JiraCalloutQueueable implements Queueable, Database.AllowsCallouts 
 	) {
 		this.calloutType = TYPE_PROJECT;
 		this.recordId = recordId;
-		this.projectWrapper = new JiraWrapper.ProjectWrapper(projectName, projectKey, description);
+		this.projectWrapper = new JiraWrapper.ProjectWrapper(
+			projectName, projectKey, description);
 	}
 
 	/**
@@ -64,7 +65,33 @@ public class JiraCalloutQueueable implements Queueable, Database.AllowsCallouts 
 	 */
 	public void execute(QueueableContext context) {
 		// Your implementation goes here
-	}
+
+		System.debug('***JiraCalloutQueueable.execute START');
+		
+        if (TYPE_PROJECT.equals(calloutType)) {
+            String jiraProjectId = JiraAPIService.createProject(projectWrapper);
+            if (jiraProjectId != null) {
+                
+                update new Jira_Project__c(
+                    Id            = recordId,
+                    Project_ID__c = jiraProjectId
+                );
+            }
+
+        } else if (TYPE_ISSUE.equals(calloutType)) {
+            String jiraIssueKey = JiraAPIService.createIssue(issueWrapper);
+            if (jiraIssueKey != null) {
+                
+                update new Jira_Issue__c(
+                    Id             = recordId,
+                    Issue_Key__c   = jiraIssueKey,
+                    Last_Updated__c= System.now()
+                );
+            }
+        }
+
+        System.debug('◀️ execute Queueable END');
+    }
 
 	/**
 	 * Update the Jira Project record with the Jira project Id
@@ -74,6 +101,13 @@ public class JiraCalloutQueueable implements Queueable, Database.AllowsCallouts 
 	 */
 	private void updateJiraProject(String jiraProjectId) {
 		// Your implementation goes here
+		System.debug('***updateJiraProject ' + jiraProjectId);
+		// Update the Jira_Project__c record with the Jira project ID
+		update new Jira_Project__c(
+			Id            = recordId,
+			Project_ID__c = jiraProjectId
+		);
+        //update toUpdate;
 	}
 
 	/**
@@ -85,5 +119,14 @@ public class JiraCalloutQueueable implements Queueable, Database.AllowsCallouts 
 	 */
 	private void updateJiraIssue(String jiraIssueKey) {
 		// Your implementation goes here
-	}
+		System.debug('***updateJiraIssue ' + jiraIssueKey);
+		// Update the Jira_Issue__c record with the Jira issue key
+		update new Jira_Issue__c(
+			Id             = recordId,
+			Issue_Key__c   = jiraIssueKey,
+			Last_Updated__c= System.now()
+		);
+        //update toUpdate;
+    }
+	
 }
